@@ -25,6 +25,7 @@ U8 CPU_Utilization_Info_Read_To_Compute;
 uint32_t Percent_CPU_Utilization;
 uint32_t Prev_Idle_Counter;
 uint32_t Idle_Counts;
+uint32_t Calculate_Idle_Counts (void);
 void initTimer2(void)
 {
   //8 bit timer. we want a 1ms compare match interrupt
@@ -77,12 +78,28 @@ uint32_t Read_Idle_Counts(void)
   interrupts();
   return rv;
 }
+#define UNLOADED_IDLE_COUNTS 2
+uint32_t Calculate_CPU_Utilization (uint32_t temp_counts)
+{
+  Percent_CPU_Utilization = (100 * temp_counts) / UNLOADED_IDLE_COUNTS;
+  return Percent_CPU_Utilization;
+}
+uint32_t Calculate_Idle_Counts (void)
+{
+  uint32_t temp_counts;
+  Idle_Counts = Idle_Counter - Prev_Idle_Counter;
+  Prev_Idle_Counter = Idle_Counter;
+  // CPU_Utilization_Info_Read_To_Compute = 1;
+  
+  
+    // CPU_Utilization_Info_Read_To_Compute = 0;
+  return Idle_Counts;
+}
 U8 One_MS_Task_Ready;
 U8 Ten_MS_Task_Ready;
 U8 Twenty_MS_Task_Ready;
 U8 One_Hundred_MS_Task_Ready;
 U8 One_S_Task_Ready;
-
 void One_MS_Task(void)
 {
 
@@ -101,9 +118,11 @@ void One_Hundred_MS_Task(void)
 }
 void One_S_Task(void)
 {
-  // digitalWrite(LEDPIN, !digitalRead(LEDPIN));
-  // Serial.print("Last Idle_Counts");
-  // Serial.println(Calculate_Idle_Counts());
+  digitalWrite(LEDPIN, !digitalRead(LEDPIN));
+  Serial.print("Last Idle_Counts  ");
+  Serial.println(Calculate_Idle_Counts());
+  Serial.print("Last CPU Utilization  ");
+  Serial.println(Calculate_CPU_Utilization(Calculate_Idle_Counts()));
 
 }
 void Run_Tasks(void)
@@ -129,25 +148,12 @@ void Run_Tasks(void)
     One_S_Task();
   }
 }
-#define UNLOADED_IDLE_COUNTS 2
-#define INTERVAL 100
-uint16_t previousMillis;
+// #define INTERVAL 100
+// uint16_t previousMillis;
 void loop()
 {
   Signal_Idle();
   Run_Tasks();
-}
-uint32_t Calculate_Idle_Counts (void)
-{
-  uint32_t temp_counts;
-  Idle_Counts = Idle_Counter - Prev_Idle_Counter;
-  Prev_Idle_Counter = Idle_Counter;
-  // CPU_Utilization_Info_Read_To_Compute = 1;
-  
-  
-    // CPU_Utilization_Info_Read_To_Compute = 0;
-    Percent_CPU_Utilization = (100 * temp_counts) / UNLOADED_IDLE_COUNTS;
-  return Idle_Counts;
 }
 /* WARNING this function called from ISR */
 void Update_Task_Ready_Flags(void)
