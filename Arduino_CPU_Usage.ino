@@ -1,28 +1,10 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
-// #include <stdint.h>
-// #include <inttypes.h>
-    // #include <stdint.h>
 
 #define LEDPIN 13
-// typedef unsigned long int uint32_t;
-// typedef unsigned int U16;
-// typedef unsigned char  uint8_t;
-// #define unsigned long int uint32_t
-// #define unsigned int U16
-// #define unsigned char  uint8_t
-    typedef uint8_t   U8;
-    // typedef int8_t    S8;
-    // typedef char      C8;   //lint !e971 : "char" used directly in this context 
 
-    // typedef uint16_t  U16;
-    // typedef int16_t   S16;
-
-    // typedef uint32_t  uint32_t;
-    // typedef int32_t   S32;
 uint32_t Idle_Counter;
-U8 CPU_Utilization_Info_Read_To_Compute;
-uint32_t Percent_CPU_Utilization;
+uint8_t CPU_Utilization_Info_Read_To_Compute;
 uint32_t Prev_Idle_Counter;
 uint32_t Idle_Counts;
 uint32_t Calculate_Idle_Counts (void);
@@ -65,6 +47,8 @@ void setup()
 
   // enable global interrupts:
   interrupts();
+  Serial.println("started");
+
 }
 void Signal_Idle(void)
 {
@@ -78,28 +62,23 @@ uint32_t Read_Idle_Counts(void)
   interrupts();
   return rv;
 }
-#define UNLOADED_IDLE_COUNTS 2
+#define UNLOADED_IDLE_COUNTS 348945
 uint32_t Calculate_CPU_Utilization (uint32_t temp_counts)
 {
-  Percent_CPU_Utilization = (100 * temp_counts) / UNLOADED_IDLE_COUNTS;
-  return Percent_CPU_Utilization;
+  return 100 - ((100 * temp_counts) / UNLOADED_IDLE_COUNTS);
 }
 uint32_t Calculate_Idle_Counts (void)
 {
   uint32_t temp_counts;
   Idle_Counts = Idle_Counter - Prev_Idle_Counter;
   Prev_Idle_Counter = Idle_Counter;
-  // CPU_Utilization_Info_Read_To_Compute = 1;
-  
-  
-    // CPU_Utilization_Info_Read_To_Compute = 0;
   return Idle_Counts;
 }
-U8 One_MS_Task_Ready;
-U8 Ten_MS_Task_Ready;
-U8 Twenty_MS_Task_Ready;
-U8 One_Hundred_MS_Task_Ready;
-U8 One_S_Task_Ready;
+uint8_t One_MS_Task_Ready;
+uint8_t Ten_MS_Task_Ready;
+uint8_t Twenty_MS_Task_Ready;
+uint8_t One_Hundred_MS_Task_Ready;
+uint8_t One_S_Task_Ready;
 void One_MS_Task(void)
 {
 
@@ -108,43 +87,44 @@ void Ten_MS_Task(void)
 {
 
 }
-void Twenty_MS_Task(void)
-{
-
-}
 void One_Hundred_MS_Task(void)
 {
+  //10 * 50ms = 500ms delay
+  Serial.println("delay(50);");
+  delay(50);
 
 }
 void One_S_Task(void)
 {
+  uint32_t idleCounts = Calculate_Idle_Counts();
   digitalWrite(LEDPIN, !digitalRead(LEDPIN));
   Serial.print("Last Idle_Counts  ");
-  Serial.println(Calculate_Idle_Counts());
-  Serial.print("Last CPU Utilization  ");
-  Serial.println(Calculate_CPU_Utilization(Calculate_Idle_Counts()));
+  Serial.println(idleCounts);
+  Serial.print("CPU Utilization  ");
+  Serial.print(Calculate_CPU_Utilization(idleCounts));
+  Serial.println("%");
 
 }
 void Run_Tasks(void)
 {
   if(One_MS_Task_Ready)
   {
+    One_MS_Task_Ready=0;
     One_MS_Task();
   }
   if(Ten_MS_Task_Ready)
   {
+    Ten_MS_Task_Ready=0;
     Ten_MS_Task();
-  }
-  if(Twenty_MS_Task_Ready)
-  {
-    Twenty_MS_Task();
   }
   if(One_Hundred_MS_Task_Ready)
   {
+    One_Hundred_MS_Task_Ready=0;
     One_Hundred_MS_Task();
   }
   if(One_S_Task_Ready)
   {
+    One_S_Task_Ready=0;
     One_S_Task();
   }
 }
@@ -161,21 +141,17 @@ void Update_Task_Ready_Flags(void)
   static uint16_t counter;
   One_MS_Task_Ready=1;
   counter++;
-  if(counter == 10)
+  if((counter%10)==0)
   {
-    Ten_MS_Task_Ready;
+    Ten_MS_Task_Ready=1;
   }
-  if(counter == 20)
+  if((counter%100)==0)
   {
-    Twenty_MS_Task_Ready;
-  }
-  if(counter == 100)
-  {
-    One_Hundred_MS_Task_Ready;
+    One_Hundred_MS_Task_Ready=1;;
   }
   if(counter == 1000)
   {
-    One_S_Task_Ready;
+    One_S_Task_Ready=1;
     counter=0;
   }  
 }
