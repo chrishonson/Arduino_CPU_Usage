@@ -67,7 +67,7 @@ uint32_t Read_Idle_Counts(void)
   interrupts();
   return rv;
 }
-#define UNLOADED_IDLE_COUNTS 173858
+#define UNLOADED_IDLE_COUNTS 174848
 uint32_t Calculate_CPU_Utilization (uint32_t temp_counts)
 {
   return 100 - ((100 * temp_counts) / UNLOADED_IDLE_COUNTS);
