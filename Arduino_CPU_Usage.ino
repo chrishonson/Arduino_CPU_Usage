@@ -22,13 +22,18 @@ void initTimer2(void)
   //16Mhz/128 = 125000hz = 0.000008s
   //(1ms/8us) - 1 = x = 124
   // set compare match register to desired timer count:
-  OCR2A = 124;
+  // fclkio / (2 * prescaler (OCR2A)) = f
+  // 16000000 / (2 * 128 (1 + 124)) =  500hz
+
+  OCR2A = 124;  
 
   // turn on CTC(clear timer on compare match) mode:
-  TCCR2B |= (1 << WGM22);
+  // TCCR2A = 0;
+  TCCR2A |= (1 << WGM21);
 
   // Set CS20 and CS22 bits for 128 prescaler:
-  TCCR2B |= (1 << CS20);
+  // TCCR2B = 0; 
+  // TCCR2B |= (1 << CS20);
   TCCR2B |= (1 << CS22);
 
   // enable timer compare match interrupt:
@@ -62,7 +67,7 @@ uint32_t Read_Idle_Counts(void)
   interrupts();
   return rv;
 }
-#define UNLOADED_IDLE_COUNTS 348945
+#define UNLOADED_IDLE_COUNTS 173858
 uint32_t Calculate_CPU_Utilization (uint32_t temp_counts)
 {
   return 100 - ((100 * temp_counts) / UNLOADED_IDLE_COUNTS);
